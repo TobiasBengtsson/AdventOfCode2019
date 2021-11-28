@@ -12,10 +12,10 @@ solve (x:xs) = show $ 100 * (fst findSuccess) + snd findSuccess
   where
     findSuccess = fromJust $ find predicate getAllAttempts
     predicate = (==) 19690720 . getResult
-    getResult (noun, verb) = fromJust . Map.lookup 0 . iterateIndex 0 $ getAdjustedOpcodeMap' noun verb x
+    getResult (noun, verb) = fromJust . Map.lookup 0 . runProgram 0 $ getAdjustedMemoryMap' noun verb x
 
-getAdjustedOpcodeMap' :: Int -> Int -> BS.ByteString -> Map.Map Int Int
-getAdjustedOpcodeMap' noun verb = Map.insert 1 noun . Map.insert 2 verb . getOpcodeMap
+getAdjustedMemoryMap' :: Int -> Int -> BS.ByteString -> Map.Map Int Int
+getAdjustedMemoryMap' noun verb = Map.insert 1 noun . Map.insert 2 verb . getMemoryMap
 
 getAllAttempts :: [(Int, Int)]
 getAllAttempts = [(x, y) | x <- [0..99], y <- [0..99]]

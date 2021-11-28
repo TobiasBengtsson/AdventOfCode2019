@@ -6,24 +6,27 @@ import qualified Data.Map as Map
 import Data.Maybe
 
 solve :: [BS.ByteString] -> String
-solve (x:xs) = show $ fromJust . Map.lookup 0 . iterateIndex 0 $ getAdjustedOpcodeMap x
+solve (x:xs) = show $ fromJust . Map.lookup 0 . runProgram 0 $ getAdjustedMemoryMap x
 
-getAdjustedOpcodeMap :: BS.ByteString -> Map.Map Int Int
-getAdjustedOpcodeMap = Map.insert 1 12 . Map.insert 2 2 . getOpcodeMap
+getAdjustedMemoryMap :: BS.ByteString -> Map.Map Int Int
+getAdjustedMemoryMap = Map.insert 1 12 . Map.insert 2 2 . getMemoryMap
 
-getOpcodeMap :: BS.ByteString -> Map.Map Int Int
-getOpcodeMap bs = Map.fromList $ zip [0..] opcodeList
+getMemoryMap :: BS.ByteString -> Map.Map Int Int
+getMemoryMap bs = Map.fromList $ zip [0..] opcodeList
   where
     opcodeList :: [Int]
     opcodeList = fmap (fst . fromJust . BC.readInt) $ BC.split ',' bs
 
-iterateIndex :: Int -> Map.Map Int Int -> Map.Map Int Int
-iterateIndex i m = case Map.lookup i m of
+runProgram :: Int -> Map.Map Int Int -> Map.Map Int Int
+runProgram i m = case Map.lookup i m of
     Nothing -> m
     Just 99 -> m
-    Just 2 -> iterateIndex (i + 4) $ applyOpcode (*) m
-    Just 1 -> iterateIndex (i + 4) $ applyOpcode (+) m
+    Just 2 -> applyOpcodeAndProceed (*)
+    Just 1 -> applyOpcodeAndProceed (+)
   where
     lookupOffset k = m Map.! (i + k)
-    lookup2Offset k = m Map.! (lookupOffset k)
-    applyOpcode fn = Map.insert (lookupOffset 3) (fn (lookup2Offset 1) (lookup2Offset 2))
+    fstVal = m Map.! (lookupOffset 1)
+    sndVal = m Map.! (lookupOffset 2)
+    updateIndex = lookupOffset 3
+    applyOpcode fn = Map.insert updateIndex (fn fstVal sndVal)
+    applyOpcodeAndProceed fn = runProgram (i + 4) $ applyOpcode fn m
